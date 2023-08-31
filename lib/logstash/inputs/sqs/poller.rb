@@ -31,7 +31,7 @@ class SqsPoller
   MAX_TIME_BEFORE_GIVING_UP = 60
   # only needed in "preprocess":
   EVENT_SOURCE = 'aws:s3'
-  EVENT_TYPE = 'ObjectCreated'
+  EVENT_TYPES = ['ObjectCreated', 'ObjectRestore:Completed']
 
   # initialization and setup happens once, outside the threads:
   #
@@ -155,7 +155,7 @@ class SqsPoller
       @logger.debug("We found a record", :record => record)
       # in case there are any events with Records that aren't s3 object-created events and can't therefore be
       # processed by this plugin, we will skip them and remove them from queue
-      if record['eventSource'] == EVENT_SOURCE and record['eventName'].start_with?(EVENT_TYPE) then
+      if record['eventSource'] == EVENT_SOURCE and EVENT_TYPES.any? { |t| record['eventName'].start_with?(t) } then
         @logger.debug("record is valid")
         bucket  = CGI.unescape(record['s3']['bucket']['name'])
         key     = CGI.unescape(record['s3']['object']['key'])
@@ -166,6 +166,8 @@ class SqsPoller
           size: size,
           folder: get_object_path(key)
         })
+      else
+        @logger.debug("record is NOT valid")
       end
     end
   end
