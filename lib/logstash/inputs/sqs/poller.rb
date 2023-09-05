@@ -160,12 +160,17 @@ class SqsPoller
         bucket  = CGI.unescape(record['s3']['bucket']['name'])
         key     = CGI.unescape(record['s3']['object']['key'])
         size    = record['s3']['object']['size']
-        yield({
-          bucket: bucket,
-          key: key,
-          size: size,
-          folder: get_object_path(key)
-        })
+
+        if size > 0
+          yield({
+            bucket: bucket,
+            key: key,
+            size: size,
+            folder: get_object_path(key)
+          })
+        else
+          @logger.debug("skipping record for empty file")
+        end
       else
         @logger.debug("record is NOT valid")
       end
